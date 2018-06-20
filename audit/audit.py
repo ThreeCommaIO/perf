@@ -5,6 +5,8 @@ import re
 import os
 import sys
 
+FNULL = open(os.devnull, 'w')
+
 
 def empty(value):
     try:
@@ -23,7 +25,7 @@ def read_file(filename):
 
 def read_command(command):
     try:
-        return subprocess.check_output(command.split()).strip()
+        return subprocess.check_output(command.split(), stderr=FNULL).strip()
     except OSError:
         return "not available"
     except:
