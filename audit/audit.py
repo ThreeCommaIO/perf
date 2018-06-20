@@ -15,7 +15,7 @@ def read_file(filename):
     try:
         return open(filename).read().strip()
     except:
-        "not available"
+        return "not available"
 
 
 def read_command(command):
