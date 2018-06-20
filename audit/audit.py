@@ -23,8 +23,7 @@ def read_file(filename):
 
 def read_command(command):
     try:
-        res = subprocess.check_output(command.split()).strip()
-        return res
+        return subprocess.check_output(command.split()).strip()
     except OSError:
         return "not available"
     except:
@@ -56,8 +55,7 @@ def get_release():
     for rel in rels:
         if os.path.isfile(rel):
             try:
-                res = read_file(rel)
-                return res
+                return read_file(rel)
             except:
                 pass
 
