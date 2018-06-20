@@ -4,6 +4,8 @@ import subprocess
 import re
 import os
 import sys
+import time
+import socket
 
 FNULL = open(os.devnull, 'w')
 
@@ -189,7 +191,10 @@ def main():
     output['power_mgmt']['max_cstate'] = read_file(
         '/sys/module/intel_idle/parameters/max_cstate')
 
-    print(json.dumps(output, indent=4))
+    with open(
+            'audit-' + socket.gethostname() + '-' + str(int(time.time())) +
+            '.json', 'w') as outfile:
+        json.dump(output, outfile)
 
 
 if __name__ == "__main__":
