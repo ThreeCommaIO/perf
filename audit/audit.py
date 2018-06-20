@@ -54,12 +54,12 @@ def get_release():
         "/etc/system-release", "/etc/lsb-release"
     ]
     for rel in rels:
-        try:
-            res = read_file(rel)
-        except:
-            pass
-
-    return res
+        if os.path.isfile(rel):
+            try:
+                res = read_file(rel)
+                return res
+            except:
+                pass
 
 
 def get_scheduler():
