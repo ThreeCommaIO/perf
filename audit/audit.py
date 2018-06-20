@@ -42,10 +42,14 @@ def get_sysctl():
 
 
 def get_release():
-    rels = ["/etc/SuSE-release", "/etc/redhat-release", "/etc/redhat_version", "/etc/fedora-release",
-        "/etc/slackware-release", "/etc/slackware-version", "/etc/debian_release", "/etc/debian_version",
-        "/etc/os-release", "/etc/mandrake-release", "/etc/yellowdog-release", "/etc/sun-release",
-        "/etc/release", "/etc/gentoo-release", "/etc/system-release", "/etc/lsb-release"]
+    rels = [
+        "/etc/SuSE-release", "/etc/redhat-release", "/etc/redhat_version",
+        "/etc/fedora-release", "/etc/slackware-release",
+        "/etc/slackware-version", "/etc/debian_release", "/etc/debian_version",
+        "/etc/os-release", "/etc/mandrake-release", "/etc/yellowdog-release",
+        "/etc/sun-release", "/etc/release", "/etc/gentoo-release",
+        "/etc/system-release", "/etc/lsb-release"
+    ]
     for rel in rels:
         try:
             res = read_file(rel)
@@ -57,13 +61,15 @@ def get_release():
 
 def get_scheduler():
     try:
-        p1 = subprocess.Popen(['ls', '-l', '/sys/block'], stdout=subprocess.PIPE)
-        p2 = subprocess.Popen(['awk', "{print $9}"], stdin=p1.stdout, stdout=subprocess.PIPE)
+        p1 = subprocess.Popen(
+            ['ls', '-l', '/sys/block'], stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(
+            ['awk', "{print $9}"], stdin=p1.stdout, stdout=subprocess.PIPE)
         blocks = filter(None, p2.communicate()[0].split("\n"))
 
         res = {}
         for block in blocks:
-          res[block] = read_file('/sys/block/' + block + '/queue/scheduler')
+            res[block] = read_file('/sys/block/' + block + '/queue/scheduler')
 
         return res
     except:
@@ -75,8 +81,8 @@ def tabular_data(data):
     lines = data.split("\n")
 
     # keys
-    first_line = re.sub('Local Address:Port','Local-Address-Port', lines[0])
-    first_line = re.sub('Peer Address:Port','Peer-Address-Port', first_line)
+    first_line = re.sub('Local Address:Port', 'Local-Address-Port', lines[0])
+    first_line = re.sub('Peer Address:Port', 'Peer-Address-Port', first_line)
     keys = ' '.join(first_line.split()).split(' ')
 
     try:
@@ -88,13 +94,13 @@ def tabular_data(data):
         keys[i] = re.sub(r'\W+', '', s.lower().strip())
 
     # data
-    for i in range(1,len(lines)):
+    for i in range(1, len(lines)):
         a = {}
         vals = ' '.join(lines[i].split()).split(' ')
 
         # /proc/partitions has no data in the second row.  If no val present, skip the row
         if vals[0] == "":
-          continue
+            continue
 
         for j in range(len(keys)):
             key = keys[j]
@@ -102,7 +108,7 @@ def tabular_data(data):
                 val = vals[j]
             except:
                 val = ''
-            a[key] = val
+            output[key] = val
         res.append(a)
 
     return res
@@ -120,61 +126,64 @@ def delimited_data(delimiter, data):
 
 def main():
 
-    a = {}
+    output = {}
 
     # SYSCTL
-    a['sysctl'] = get_sysctl()
+    output['sysctl'] = get_sysctl()
 
     # PROC
-    a['proc'] = {}
-    a['proc']['cpuinfo'] = delimited_data(':', read_file('/proc/cpuinfo'))
-    a['proc']['cmdline'] = read_file('/proc/cmdline')
-    a['proc']['net/softnet_stat'] = read_file('/proc/net/softnet_stat')
-    a['proc']['cgroups'] = tabular_data(read_file('/proc/cgroups'))
-    a['proc']['uptime'] = read_file('/proc/uptime')
-    a['proc']['vmstat'] = delimited_data(' ', read_file('/proc/vmstat'))
-    a['proc']['loadavg'] = read_file('/proc/loadavg')
-    a['proc']['zoneinfo'] = read_file('/proc/zoneinfo')
-    a['proc']['partitions'] = tabular_data(read_file('/proc/partitions'))
-    a['proc']['version'] = read_file('/proc/version')
+    output['proc'] = {}
+    output['proc']['cpuinfo'] = delimited_data(':', read_file('/proc/cpuinfo'))
+    output['proc']['cmdline'] = read_file('/proc/cmdline')
+    output['proc']['net/softnet_stat'] = read_file('/proc/net/softnet_stat')
+    output['proc']['cgroups'] = tabular_data(read_file('/proc/cgroups'))
+    output['proc']['uptime'] = read_file('/proc/uptime')
+    output['proc']['vmstat'] = delimited_data(' ', read_file('/proc/vmstat'))
+    output['proc']['loadavg'] = read_file('/proc/loadavg')
+    output['proc']['zoneinfo'] = read_file('/proc/zoneinfo')
+    output['proc']['partitions'] = tabular_data(read_file('/proc/partitions'))
+    output['proc']['version'] = read_file('/proc/version')
 
     # PARTITIONS
-    a['disk_partitions'] = tabular_data(read_command('df -h'))
+    output['disk_partitions'] = tabular_data(read_command('df -h'))
 
     # DMESG
-    a['dmesg'] = read_command('dmesg')
+    output['dmesg'] = read_command('dmesg')
 
     # THP
-    a['transparent_huge_pages'] = {}
-    a['transparent_huge_pages']['enabled'] = read_file('/sys/kernel/mm/transparent_hugepage/enabled')
-    a['transparent_huge_pages']['defrag'] = read_file('/sys/kernel/mm/transparent_hugepage/defrag')
+    output['transparent_huge_pages'] = {}
+    output['transparent_huge_pages']['enabled'] = read_file(
+        '/sys/kernel/mm/transparent_hugepage/enabled')
+    output['transparent_huge_pages']['defrag'] = read_file(
+        '/sys/kernel/mm/transparent_hugepage/defrag')
 
     # MEMORY
-    a['memory'] = read_command('free -m')
+    output['memory'] = read_command('free -m')
 
     # DISK
-    a['disk'] = {}
-    a['disk']['scheduler'] = get_scheduler()
-    a['disk']['number_of_disks'] = tabular_data(read_command('lsblk'))
+    output['disk'] = {}
+    output['disk']['scheduler'] = get_scheduler()
+    output['disk']['number_of_disks'] = tabular_data(read_command('lsblk'))
 
     # NETWORK
-    a['network'] = {}
-    a['network']['ifconfig'] = read_command('ifconfig')
-    a['network']['ip'] = read_command('ip addr show')
-    a['network']['netstat'] = read_command('netstat -a')
-    a['network']['ss'] = tabular_data(read_command('ss -tan'))
+    output['network'] = {}
+    output['network']['ifconfig'] = read_command('ifconfig')
+    output['network']['ip'] = read_command('ip addr show')
+    output['network']['netstat'] = read_command('netstat -a')
+    output['network']['ss'] = tabular_data(read_command('ss -tan'))
 
     # DISTRO
-    a['distro'] = {}
-    a['distro']['issue'] = read_file('/etc/issue')
-    a['distro']['release'] = get_release()
+    output['distro'] = {}
+    output['distro']['issue'] = read_file('/etc/issue')
+    output['distro']['release'] = get_release()
 
     # POWER MGMT
-    a['power_mgmt'] = {}
-    a['power_mgmt']['max_cstate'] = read_file('/sys/module/intel_idle/parameters/max_cstate')
+    output['power_mgmt'] = {}
+    output['power_mgmt']['max_cstate'] = read_file(
+        '/sys/module/intel_idle/parameters/max_cstate')
 
     print json.dumps(a, indent=4)
 
 
 if __name__ == "__main__":
-   main()
+    main()
