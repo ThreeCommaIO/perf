@@ -1,6 +1,9 @@
+#!/usr/bin/env python
 import json
 import subprocess
 import re
+import os
+import sys
 
 
 def empty(value):
@@ -95,7 +98,7 @@ def tabular_data(data):
 
     # data
     for i in range(1, len(lines)):
-        a = {}
+        kv = {}
         vals = ' '.join(lines[i].split()).split(' ')
 
         # /proc/partitions has no data in the second row.  If no val present, skip the row
@@ -108,8 +111,8 @@ def tabular_data(data):
                 val = vals[j]
             except:
                 val = ''
-            output[key] = val
-        res.append(a)
+            kv[key] = val
+        res.append(kv)
 
     return res
 
@@ -125,6 +128,10 @@ def delimited_data(delimiter, data):
 
 
 def main():
+
+    if not os.getuid() == 0:
+        print("This script must be run as the user root")
+        sys.exit(1)
 
     output = {}
 
@@ -182,7 +189,7 @@ def main():
     output['power_mgmt']['max_cstate'] = read_file(
         '/sys/module/intel_idle/parameters/max_cstate')
 
-    print json.dumps(a, indent=4)
+    print(json.dumps(output, indent=4))
 
 
 if __name__ == "__main__":
