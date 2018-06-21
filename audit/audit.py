@@ -191,10 +191,13 @@ def main():
     output['power_mgmt']['max_cstate'] = read_file(
         '/sys/module/intel_idle/parameters/max_cstate')
 
-    with open(
-            'audit-' + socket.gethostname() + '-' + str(int(time.time())) +
-            '.json', 'w') as outfile:
+    audit_file = 'audit-%s-%s.json' % (socket.gethostname(),
+                                       str(int(time.time())))
+
+    with open(audit_file, 'w+') as outfile:
         json.dump(output, outfile)
+
+    print("Generated audit file: %s" % (audit_file))
 
 
 if __name__ == "__main__":
